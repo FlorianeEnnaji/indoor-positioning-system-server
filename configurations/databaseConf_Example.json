@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "root",
+    "password": "root",
+    "database": "IPS",
+    "host": "127.0.0.1",
+    "dialect": "mysql",
+
+    "logging": false
+  },
+  "production": {
+    "username": "root",
+    "password": "root",
+    "database": "IPS",
+    "host": "127.0.0.1",
+    "dialect": "mysql",
+    
+    "logging": false
+  }
+}
+
+
+// <!> This file is only an example, you need to modify it with your value
