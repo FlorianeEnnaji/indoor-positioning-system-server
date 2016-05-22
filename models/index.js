@@ -1,12 +1,26 @@
 'use strict';
 
-var fs        = require('fs');
-var path      = require('path');
-var Sequelize = require('sequelize');
-var basename  = path.basename(module.filename);
-var env       = process.env.NODE_ENV || 'development';
-var config    = require(__dirname + '/../configurations/databaseConf.json')[env];
-var db        = {};
+
+var fs         = require('fs');
+var path       = require('path');
+var Sequelize  = require('sequelize');
+var colors     = require('colors');
+var basename   = path.basename(module.filename);
+var env        = process.env.NODE_ENV || 'development';
+var dbConfFile = __dirname + '\\..\\configurations\\databaseConf.json'
+var db         = {};
+
+try {
+  fs.statSync(dbConfFile)
+}
+catch(err) {
+  console.log('\nError:'.bold.red + ' The file who contain the ' + 'database configuration'.bold + ' is ' + 'missing'.bold)
+  console.log('Please create one at: ' + 'configurations/datbaseConf.json'.yellow)
+  console.log('You can use the example provide as model')
+  process.exit(1);
+}
+
+var config    = require(dbConfFile)[env];
 
 if (config.use_env_variable) {
   var sequelize = new Sequelize(process.env[config.use_env_variable]);

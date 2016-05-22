@@ -1,5 +1,6 @@
-const util = require('util');
+const util         = require('util');
 const EventEmitter = require('events');
+const logger	   = require('./libraries/Logger');
 
 // This object will colect and parse all measures packets send form APs for a single location request (send by a device)
 function Agregator (options) {
@@ -52,7 +53,7 @@ Agregator.prototype.getData = function(deviceIp){
 
 // retrive measure packets in the list for a particular deviceIp
 Agregator.prototype._getDataPacket = function(deviceIp, resolver){
-	console.log('proceed request')
+	logger.Agregator('proceed request')
 
 	this._cleanQueue()
 
