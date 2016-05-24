@@ -1,5 +1,3 @@
-
-
 var globalConf = require('../configurations/globalConf');
 var colors     = require('colors');
 

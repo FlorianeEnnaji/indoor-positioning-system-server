@@ -3,22 +3,23 @@
 // REQUIRE SETUP
 // ==============================================
 
-var express    = require('express');
-var bodyParser = require('body-parser')
-var colors     = require('colors');
+var express   		= require('express');
+var bodyParser 		= require('body-parser');
+var colors     		= require('colors');
 
-var globalConf = require('./configurations/globalConf');
-var Agregator  = require('./libraries/Agregator');
-var dbCache    = require("./libraries/DbCache");
-var logger	   = require('./libraries/Logger');
-var computationModel  = require("./libraries/ComputationModel")[globalConf.ComputationModel];
+var globalConf		 = require('./configurations/globalConf');
+var Agregator 		 = require('./libraries/Agregator');
+var dbCache   		 = require("./libraries/DbCache");
+var logger	  		 = require('./libraries/Logger');
+var Calibration	     = require('./libraries/Calibration');
+var computationModel = require("./libraries/ComputationModel")[globalConf.ComputationModel];
 
 // ENV VAR
 // ==============================================
 
 var app        = express();
 var router     = express.Router();
-var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, numberOfAp : globalConf.NumberOfAp})
+var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: true, measuresPerRequest : globalConf.NumberOfAp}) // Agregator parameters must be set in function of the chosen model 
 
 // CONF
 // ==============================================
@@ -53,6 +54,9 @@ router.get('/locate-me', function(req, res) {
     	logger.Location(pos)
 
     	res.send(pos)
+    }).catch(error=> {
+    	res.send(JSON.stringify({error: "A error Append"}))
+    	logger.Agregator(error)
     })
 });
 
@@ -69,27 +73,29 @@ router.post('/AP-measure', function(req, res){
 
 });
 
-router.post('/AP-measure', function(req, res){
-	if(agregator.collect(req, res))
-		res.send('Ok');
-	else
-		res.send('Error');
-});
-
 
 if (globalConf.CalibrationMode){
 	logger.log('Calibration mode is ' + 'Enable'.green)
+
+	var calibrationAgregator  = Agregator({timeWindow: globalConf.CalibrationTimeWindow, countingMeasureEnable: false})
+
 	// api/calibration/send-probe
 	router.post('/calibration/send-probe', function(req, res) {
-		// not yet implemented
-		logger.log(req.body)
-	    res.send('Save the fingerprint for the probe ');  
+		var deviceIp = req.body.DeviceIp // for debugging
+		calibrationAgregator.getData(deviceIp).then(ApData => {
+			Calibration.saveProbe(req.body, ApData)
+		}).catch(error=> {
+			logger.Agregator(error)
+		})
+	    res.send('Ok Thanks :)');  
 	});
+
 	// api/calibration/AP-measure
 	router.post('/calibration/AP-measure', function(req, res) {
-		// not yet implemented
-	    res.send('Collecting callibration measure from AP'); 
+		calibrationAgregator.collect(req, res)
+		res.send('Ok');
 	});
+
 }else{
 // 	logger.log('Calibration mode is ' + 'Disable'.red)
 }
@@ -109,7 +115,7 @@ var locationCachePromise = dbCache.parseLocations().then(function(){
 	logger.DBCache('Locations cached');
 })
 var modelDataCachePromise = dbCache[globalConf.ComputationModel].parseDataForSingleValueModel().then(function(){
-	logger.DBCache('Data for '+ globalConf.ComputationModel +' model cached');
+	logger.DBCache('Data for '+ colors.bold(globalConf.ComputationModel) +' model cached');
 })
 
 
