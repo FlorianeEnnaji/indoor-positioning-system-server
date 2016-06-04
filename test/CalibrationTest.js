@@ -3,7 +3,7 @@ var http = require('http');
 var querystring = require('querystring');
 
 var serverIp   = "127.0.0.1"
-var serverPort = "8080"
+var serverPort = "8090"
 
 var deviceId1 = "192.168.1.53" 
 var deviceId2 = "192.168.1.54" 

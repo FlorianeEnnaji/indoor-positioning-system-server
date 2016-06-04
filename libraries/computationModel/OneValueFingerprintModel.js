@@ -10,14 +10,18 @@ OneValueFingerprintModel.getLocation = function(recievedMeasures){
 
 	var bestDistance = Infinity
 	var bestPositionId = null;
-	dbCache.SingleValue.getDataForSingleValueModel().forEach((elem, posId) => {
+	dbCache.SingleValue.getData().forEach((elem, posId) => {
+
 		var dist = this._RSSIDistance(recievedMeasures, elem)
+		//console.log('Distance: ' + dist)
 		if(dist < bestDistance){
 			bestDistance = dist
 			bestPositionId = posId
 		}
 
 	})
+	if(bestPositionId == null)
+		return null
 	return dbCache.getLocation(bestPositionId)
 }
 
@@ -30,24 +34,21 @@ OneValueFingerprintModel._formatReceivedMeasures = function(recievedMeasures){
 }
 
 
-//
 OneValueFingerprintModel._RSSIDistance = function(measures1, measures2){
 	var dist = 0
 	for (ApId in measures1){
 		if(measures2[ApId] != undefined)
 			dist += Math.pow(measures1[ApId].value - measures2[ApId].value,2)
 		else{
-			dist = Infinity
-			return dist
+			dist = Math.pow(measures1[ApId].value - 95,2)
 		}
 	}
 	for (ApId in measures2){
 		if(measures1[ApId] == undefined){
-			dist = Infinity
-			return dist
+			dist = Math.pow(measures1[ApId].value - 95,2)
 		}
 	}
-	return dist
+	return Math.sqrt(dist)
 }
 
 

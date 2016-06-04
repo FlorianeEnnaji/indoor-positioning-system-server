@@ -7,6 +7,7 @@ const logger	   = require('../libraries/Logger');
 function Agregator (options) {
 	var thisOptions = options || {}
     this.timeWindow = thisOptions.timeWindow || 300
+    this.queueMaxLength = thisOptions.queueMaxLength || 50
     this.countingMeasureEnable = thisOptions.countingMeasureEnable != undefined ? thisOptions.countingMeasureEnable : true
     this.measuresPerRequest = thisOptions.measuresPerRequest || 4
     this.incomingMeasureRequests = []
@@ -17,54 +18,61 @@ util.inherits(Agregator, EventEmitter);
 
 // Collect measure packets
 Agregator.prototype.collect = function(req, res) {
-	if (!req.body.APid || !req.body.DeviceIp || !req.body.RSSI) 
+	if (!req.body.APid || !req.body.DeviceIp || !req.body.RSSI){
+		logger.Agregator('ERROR'.bold.red + 'measure packet body error')
 		return false;
-	var data = {receivedTime: Date.now(), APid: req.body.APid, DeviceIp: req.body.DeviceIp, RSSI: req.body.RSSI}
-    this.incomingMeasureRequests.push(data)
+	}
 
-    if (this.countingMeasureEnable)
-		this.emit('newDataPacket', data)
+	var rssi = req.body.RSSI.split(',')
+	rssi.forEach(elem => {
+		var data = {receivedTime: Date.now(), APid: req.body.APid, DeviceIp: req.body.DeviceIp, RSSI: elem}
+	    this.incomingMeasureRequests.push(data)
+
+	    if(this.incomingMeasureRequests > this.queueMaxLength)
+	    	this.incomingLocationRequests.splice(0, 1) 
+
+	    if (this.countingMeasureEnable)
+			this._proceedPacket(data)
+	})
     return true;
 }
 
 // wait and return collected measure packets
 Agregator.prototype.getData = function(deviceIp){
+	//console.log(deviceIp)
 	var beginTime = Date.now();
 	return new Promise((resolve, reject) => {
 		if(this.incomingLocationRequests[deviceIp] != undefined){
-			reject('Warning'.blue + ': A location request has already been sent for ' + colors.bold(deviceIp))
+			//reject('Warning'.blue + ': A location request has already been sent for ' + colors.bold(deviceIp))
 			return;
 		}
 
-
-		this.incomingLocationRequests[deviceIp] = true
 		var timeOut = setTimeout(() => { this._getDataPacket(deviceIp, resolve) }, this.timeWindow)
-		var currentReceivePacket = 0;
-		var resolved = false;
-
-		this.on('newDataPacket', packetDetail => {
-			console.log( this.countingMeasureEnable)
-			if(packetDetail.DeviceIp == deviceIp && !resolved){
-				currentReceivePacket++;
-				clearTimeout(timeOut) // stop the old time out
-				var remainingTime = this.timeWindow - (Date.now() - beginTime)
-
-				if (remainingTime > 20 && currentReceivePacket != this.measuresPerRequest ) 
-					timeOut =  setTimeout(() => { this._getDataPacket(deviceIp, resolve) }, remainingTime)
-				else{
-					resolved = true;
-					this._getDataPacket(deviceIp, resolve);
-				}
-			}
-		})
+		this.incomingLocationRequests[deviceIp] = { packetReceived: 0, timeOut: timeOut, start: beginTime, resolver: resolve} 
 
 	}) 
+}
+
+Agregator.prototype._proceedPacket = function(packetDetail){
+	if(this.incomingLocationRequests[packetDetail.DeviceIp] != undefined){
+		this.incomingLocationRequests[packetDetail.DeviceIp].packetReceived++
+		var client = this.incomingLocationRequests[packetDetail.DeviceIp]
+		clearTimeout(client.timeOut) // stop the old time out
+		var remainingTime = this.timeWindow - (Date.now() - client.start)
+
+		if (remainingTime > 20 && client.packetReceived <= this.measuresPerRequest ) 
+			this.incomingLocationRequests[packetDetail.DeviceIp].timeOut =  setTimeout(() => {this._getDataPacket(packetDetail.DeviceIp, client.resolver) }, remainingTime)
+		else{
+			this._getDataPacket(packetDetail.DeviceIp, client.resolver);
+		}
+	}
 }
 
 // retrive measure packets in the list for a particular deviceIp
 Agregator.prototype._getDataPacket = function(deviceIp, resolver){
 	logger.Agregator('Proceed request for ' + colors.bold(deviceIp))
 
+//	console.log(this.incomingLocationRequests)
 	this._cleanQueue()
 	delete this.incomingLocationRequests[deviceIp]
 
@@ -74,6 +82,8 @@ Agregator.prototype._getDataPacket = function(deviceIp, resolver){
 		//console.log(elem.DeviceIp, deviceIp, elem.DeviceIp == deviceIp)
 		if(elem.DeviceIp == deviceIp)
 			measures.push(elem)
+
+
 	})
 	resolver(measures);
 }
@@ -83,6 +93,17 @@ Agregator.prototype._getDataPacket = function(deviceIp, resolver){
 Agregator.prototype._cleanQueue = function(){
 	while (this.incomingMeasureRequests.length > 0 && Date.now() - this.incomingMeasureRequests[0].receivedTime > this.timeWindow)
 		this.incomingMeasureRequests.splice(0,1);
+}
+
+Agregator.prototype._autoCleanQueues = function(){
+	if(this.incomingMeasureRequests.length > this.autoCleanMaxLength){
+		logger.Agregator('Auto clean incomingMeasureRequests queue, length: ' + this.incomingMeasureRequests.length)
+		this.incomingMeasureRequests.splice(0, this.incomingMeasureRequests.length - this.autoCleanMaxLength) 
+	}
+	if (this.incomingLocationRequests.length > this.autoCleanMaxLength){
+		logger.Agregator('Auto clean incomingLocationRequests queue, length: ' + this.incomingMeasureRequests.length)
+		this.incomingLocationRequests.splice(0, this.incomingLocationRequests.length - this.autoCleanMaxLength) 
+	}
 }
 
 

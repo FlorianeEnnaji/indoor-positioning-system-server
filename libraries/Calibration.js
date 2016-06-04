@@ -1,7 +1,7 @@
 
 const colors = require('colors');
 const db 	 = require("../models");
-const logger = require('../libraries/Logger');
+const logger = require('./Logger');
 
 
 // The calibration object insert all the calibration data inside the database
@@ -27,6 +27,7 @@ Calibration.saveProbe = function(reqBody, recievedMeasures){
 		recievedMeasures.forEach(elem => {
 			formatedMeasures.push({rssi: elem.RSSI, macAddress: elem.APid, location: data[0].dataValues.id})
 		})
+		//console.log(recievedMeasures)
 		db.measures.bulkCreate(formatedMeasures).then(function(data){}) // Then insert all the measures for this location 
 	})
 	
@@ -36,7 +37,7 @@ Calibration.saveProbe = function(reqBody, recievedMeasures){
 Calibration._parseReqBody = function(neededValues, reqBody){
 	var noError = neededValues.every(opt => { // check that all properties are correctly formated
 		if(reqBody[opt] == undefined){ // display a warning message otherwise
-			logger.Calibration('Warning '.blue + 'The post parameter: ' + colors.bold(opt) + ' is missing !')
+		//	logger.Calibration('Warning '.blue + 'The post parameter: ' + colors.bold(opt) + ' is missing !')
 			return false;
 		}
 		return true;

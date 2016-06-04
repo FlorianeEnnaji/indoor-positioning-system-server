@@ -31,57 +31,82 @@ app.use(bodyParser.urlencoded({
 
 // API request logger
 router.use(function(req, res, next) {
-  logger.Network(colors.bold(req.method + ' ' + req.url));
+//  logger.Network(req.connection.remoteAddress + ' ' + colors.bold(req.method + ' ' + req.url) + ' ' + JSON.stringify(req.body));
   next();
 });
 
 // ROUTES
 // ==============================================
 
+var calibrationMode = false
+if (process.argv.indexOf("calibration") != -1)
+	calibrationMode = true
+
 app.get('/', function(req, res) {
 	logger.Network(colors.bold(req.method + ' ' + req.url));
     res.send('Home page');  
 });
 
-// /api/locate-me
-router.get('/locate-me', function(req, res) {
-	//var deviceIp = req.connection.remoteAddress
-	var deviceIp = '192.168.1.53' // for debugging
-	
-    agregator.getData(deviceIp).then(ApData => {
-    	pos = computationModel.getLocation(ApData)
-    	//console.log(ApData)
-    	logger.Location(pos)
+router.get('/', function(req, res) {
+	res.send({
+		isInCalibrationMode : calibrationMode,
+		computationModel    : globalConf.ComputationModel
+		})	
+})
 
-    	res.send(pos)
-    }).catch(error=> {
-    	res.send(JSON.stringify({error: "A error Append"}))
-    	logger.Agregator(error)
-    })
-});
+router.get('/ping', function(req, res) {
+	res.send("pong")	
+})
 
-// POST parameters:
-// 		APid     : Id of the AP
-// 		DeviceIp : Ip of the device
-// 		RSSI     : Signal strength of the recieved packet
-// /api/AP-measure
-router.post('/AP-measure', function(req, res){
-	if(agregator.collect(req, res))
-		res.send('Ok');
-	else
-		res.send('Error');
+if (!calibrationMode){
+	// 	logger.log('Calibration mode is ' + 'Disable'.red)
 
-});
+	// /api/locate-me
+	router.get('/locate-me', function(req, res) {
+		var deviceIp = req.connection.remoteAddress
+		//var deviceIp = '192.168.1.53' // for debugging
+
+	    agregator.getData(deviceIp).then(ApData => {
+		    //console.log(ApData)
+	    	pos = computationModel.getLocation(ApData)
+	    	if (pos != null) {
+		    	logger.Location(pos)
+		    	res.send(pos) 		
+	    	}else{
+		    	logger.Location('ERROR'.red + ' No location found')
+		    	res.send({x: -100, y: -100})		
+	    	}
+
+	    }).catch(error=> {
+	    	res.send({error: "A error Append"})
+	    	logger.Agregator(error)
+	    })
+	});
+
+	// POST parameters:
+	// 		APid     : Id of the AP
+	// 		DeviceIp : Ip of the device
+	// 		RSSI     : Signal strength of the recieved packet
+	// /api/AP-measure
+	router.post('/AP-measure', function(req, res){
+		req.body.APid = req.connection.remoteAddress
+		//console.log(req.connection.remoteAddress)
+		if(agregator.collect(req, res))
+			res.send('Ok');
+		else
+			res.send('Error');
+	});
 
 
-if (globalConf.CalibrationMode){
+}else{
 	logger.log('Calibration mode is ' + 'Enable'.green)
 
 	var calibrationAgregator  = Agregator({timeWindow: globalConf.CalibrationTimeWindow, countingMeasureEnable: false})
 
-	// api/calibration/send-probe
-	router.post('/calibration/send-probe', function(req, res) {
-		var deviceIp = req.body.DeviceIp // for debugging
+	// /api/calibration/send-probe
+	router.post('/send-probe', function(req, res) {
+		//var deviceIp = req.body.DeviceIp // for debugging
+		var deviceIp = req.connection.remoteAddress // for debugging
 		calibrationAgregator.getData(deviceIp).then(ApData => {
 			Calibration.saveProbe(req.body, ApData)
 		}).catch(error=> {
@@ -90,14 +115,13 @@ if (globalConf.CalibrationMode){
 	    res.send('Ok Thanks :)');  
 	});
 
-	// api/calibration/AP-measure
-	router.post('/calibration/AP-measure', function(req, res) {
+	// /api/AP-measure
+	router.post('/AP-measure', function(req, res) {
+		req.body.APid = req.connection.remoteAddress
 		calibrationAgregator.collect(req, res)
 		res.send('Ok');
 	});
 
-}else{
-// 	logger.log('Calibration mode is ' + 'Disable'.red)
 }
 
 // apply theses routes to our application
@@ -110,16 +134,9 @@ app.use('/api', router);
 app.listen(globalConf.ServerPort, globalConf.ServerHostName);
 logger.Network('Server started: listen on ' + colors.bold(globalConf.ServerHostName + ':' + globalConf.ServerPort));
 
-
-var locationCachePromise = dbCache.parseLocations().then(function(){
-	logger.DBCache('Locations cached');
-})
-var modelDataCachePromise = dbCache[globalConf.ComputationModel].parseDataForSingleValueModel().then(function(){
-	logger.DBCache('Data for '+ colors.bold(globalConf.ComputationModel) +' model cached');
-})
-
-
-
-Promise.all([locationCachePromise, modelDataCachePromise]).then(() => {
+if(!calibrationMode){
+	dbCache.cacheAll(globalConf.ComputationModel).then(() => {
+		logger.log('\nServer Ready ♥\n'.rainbow);
+	})
+}else
 	logger.log('\nServer Ready ♥\n'.rainbow);
-})
