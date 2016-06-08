@@ -24,7 +24,10 @@ var computationModel = require("./libraries/ComputationModel")[globalConf.Comput
 /** variables used for the environment */
 var app        = express();
 var router     = express.Router();
-var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: true, measuresPerRequest : globalConf.NumberOfAp}) // Agregator parameters must be set in function of the chosen model
+var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: false, measuresPerRequest : globalConf.NumberOfAp}) // Agregator parameters must be set in function of the chosen model (histogram)
+
+var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: true, measuresPerRequest : globalConf.NumberOfAp}) // Agregator parameters must be set in function of the chosen model (single value)
+
 
 /** Configurations */
 
@@ -36,7 +39,7 @@ app.use(bodyParser.urlencoded({
 /** API request logger */
 router.use(function(req, res, next) {
   /* Following line is commented because it slows down communication when we receive a lot of requests, uncomment if you want to see request logs */
-//  logger.Network(req.connection.remoteAddress + ' ' + colors.bold(req.method + ' ' + req.url) + ' ' + JSON.stringify(req.body));
+ // logger.Network(req.connection.remoteAddress + ' ' + colors.bold(req.method + ' ' + req.url) + ' ' + JSON.stringify(req.body));
   next();
 });
 
@@ -87,7 +90,7 @@ if (!calibrationMode){
 		    	res.send({x: -100, y: -100})
 	    	}
 
-	    }).catch(error=> {
+	    },error => {
 	    	res.send({error: "A error Append"})
 	    	logger.Agregator(error)
 	    })
@@ -116,8 +119,7 @@ if (!calibrationMode){
 
 	/**Address : /api/calibration/send-probe*/
 	router.post('/send-probe', function(req, res) {
-		//var deviceIp = req.body.DeviceIp // for debugging
-		var deviceIp = req.connection.remoteAddress // for debugging
+		var deviceIp = req.connection.remoteAddress
 		calibrationAgregator.getData(deviceIp).then(ApData => {
 			Calibration.saveProbe(req.body, ApData)
 		}).catch(error=> {
@@ -142,6 +144,7 @@ app.use('/api', router);
 /**Starts the server*/
 
 app.listen(globalConf.ServerPort, globalConf.ServerHostName);
+logger.log('ComputationModel: ' + colors.bold(globalConf.ComputationModel));
 logger.Network('Server started: listen on ' + colors.bold(globalConf.ServerHostName + ':' + globalConf.ServerPort));
 
 if(!calibrationMode){

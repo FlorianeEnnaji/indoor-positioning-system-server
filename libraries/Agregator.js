@@ -36,8 +36,8 @@ Agregator.prototype.collect = function(req) {
 	}
 
 	var rssi = req.body.RSSI.split(',')
-	rssi.forEach(elem => {
-		var data = {receivedTime: Date.now(), APid: req.body.APid, DeviceIp: req.body.DeviceIp, RSSI: elem}
+	rssi.forEach((elem, index) => {
+		var data = {receivedTime: Date.now(), APid: req.body.APid + "#" + index, DeviceIp: req.body.DeviceIp, RSSI: elem }
 	    this.incomingMeasureRequests.push(data)
 
 	    if(this.incomingMeasureRequests > this.queueMaxLength)

@@ -16,21 +16,23 @@ var  HistogramModel = {}
  * @return the most accurate position
  */
 HistogramModel.getLocation = function(receivedMeasures){
-	receivedMeasures = this._formatReceivedMeasures(receivedMeasures)
-	//console.log(receivedMeasures)
+	parsedMeasures = this._formatReceivedMeasures(receivedMeasures)
+	//console.log(recievedMeasures)
+	//console.log(parsedMeasures)
 
 	var bestProba = 0
 	var bestPositionId = null;
-	dbCache.SingleValue.getData().forEach((elem, posId) => {
+	dbCache.Histogram.getData().forEach((elem, posId) => {
 
-		var dist = this._measureDistance(receivedMeasures, elem)
-		//console.log('Distance: ' + dist)
-		if(dist < bestProba){
-			bestProba = dist
+		var proba = this._measureDistance2(parsedMeasures, elem)
+		//console.log('Distance: ' + proba, 'point : ' + posId)
+		if(proba < bestProba){
+			bestProba = proba
 			bestPositionId = posId
 		}
 
 	})
+	//console.log('best pos: ' + bestPositionId)
 	if(bestPositionId == null)
 		return null
 	return dbCache.getLocation(bestPositionId)
@@ -46,10 +48,15 @@ HistogramModel._formatReceivedMeasures = function(receivedMeasures){
 	receivedMeasures.forEach(elem => {
 		if (formatedMeasures[elem.APid] == undefined)
 			formatedMeasures[elem.APid] = []
-		if (formatedMeasures[elem.APid][elem.RSSI] == undefined)
-			formatedMeasures[elem.APid][elem.RSSI] = 1
+			formatedMeasures[elem.APid]['totalValue'] = 0
+		}
+
+		var RSSI = parseInt(elem.RSSI)
+		formatedMeasures[elem.APid]['totalValue']++
+		if (formatedMeasures[elem.APid][RSSI] == undefined)
+			formatedMeasures[elem.APid][RSSI] = 1
 		else
-			formatedMeasures[elem.APid][elem.RSSI]++
+			formatedMeasures[elem.APid][RSSI]++
 	})
 	return formatedMeasures
 }
@@ -61,16 +68,37 @@ HistogramModel._formatReceivedMeasures = function(receivedMeasures){
  * @param measures2 the second set of measures
  * @return proba the difference between the 2 sets
  */
-HistogramModel._measureDistance = function(measures1, measures2){
+HistogramModel._measureDistance2 = function(measures1, measures2){
 	var proba = 1
 	for (ApId in measures1){
-		if(measures2[ApId] != undefined)
-			proba *= this._historgramOverlapProba(measures1[ApId], measures2[ApId])
-		else{
-			return 0
+		if(measures2[ApId] != undefined){
+			var myProb = this._historgramOverlapProba(measures1[ApId], measures2[ApId])
+			proba *= myProb;
 		}
+		else
+			return 0
 	}
 	return proba
+}
+
+/**
+ * @brief function that computes the difference between two measurements
+ * (0 totally different, 1 totally the same)
+ * @param measures1 the first set of measures
+ * @param measures2 the second set of measures
+ * @return proba the difference between the 2 sets
+ */
+HistogramModel._measureDistance = function(measures1, measures2){
+	var proba = 0
+	var nbHisto = 0
+	for (ApId in measures1){
+		if(measures2[ApId] != undefined){
+			nbHisto++
+			proba += this._historgramOverlapProba(measures1[ApId], measures2[ApId])*100
+		}else
+			return 0
+	}
+	return proba/nbHisto
 }
 
 /**
@@ -83,9 +111,15 @@ HistogramModel._measureDistance = function(measures1, measures2){
 HistogramModel._historgramOverlapProba = function(histo1, histo2){
 	var overlapProba = 0
 	for (RSSI in histo1){
-		if(histo2[RSSI] != undefined)
+		if(histo2[RSSI] != undefined && RSSI != 'totalValue'){
 			overlapProba += Math.min(histo1[RSSI]/histo1['totalValue'], histo2[RSSI]/histo2['totalValue'])
+			// console.log("h1 " + histo1[RSSI] + " " + histo1['totalValue'])
+			// console.log("h2 " + histo2[RSSI] + " " + histo2['totalValue'])
+			// console.log("proba " + overlapProba)
+		}
 	}
+	//console.log(overlapProba, histo1['totalValue'], histo2['totalValue'],  histo1[RSSI], histo2[RSSI], histo1[RSSI]/histo1['totalValue'], histo2[RSSI]/histo2['totalValue'])
+	console.log( overlapProba)
 	return overlapProba
 }
 
