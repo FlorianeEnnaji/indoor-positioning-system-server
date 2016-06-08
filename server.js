@@ -19,7 +19,9 @@ var computationModel = require("./libraries/ComputationModel")[globalConf.Comput
 
 var app        = express();
 var router     = express.Router();
-var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: true, measuresPerRequest : globalConf.NumberOfAp}) // Agregator parameters must be set in function of the chosen model 
+var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: false, measuresPerRequest : globalConf.NumberOfAp}) // Agregator parameters must be set in function of the chosen model (histogram)
+
+var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: true, measuresPerRequest : globalConf.NumberOfAp}) // Agregator parameters must be set in function of the chosen model (single value)
 
 // CONF
 // ==============================================
@@ -31,7 +33,7 @@ app.use(bodyParser.urlencoded({
 
 // API request logger
 router.use(function(req, res, next) {
-//  logger.Network(req.connection.remoteAddress + ' ' + colors.bold(req.method + ' ' + req.url) + ' ' + JSON.stringify(req.body));
+ // logger.Network(req.connection.remoteAddress + ' ' + colors.bold(req.method + ' ' + req.url) + ' ' + JSON.stringify(req.body));
   next();
 });
 
@@ -67,7 +69,7 @@ if (!calibrationMode){
 		//var deviceIp = '192.168.1.53' // for debugging
 
 	    agregator.getData(deviceIp).then(ApData => {
-		    //console.log(ApData)
+		    //console.log(ApData)		
 	    	pos = computationModel.getLocation(ApData)
 	    	if (pos != null) {
 		    	logger.Location(pos)
@@ -77,7 +79,7 @@ if (!calibrationMode){
 		    	res.send({x: -100, y: -100})		
 	    	}
 
-	    }).catch(error=> {
+	    },error => {
 	    	res.send({error: "A error Append"})
 	    	logger.Agregator(error)
 	    })
@@ -105,8 +107,7 @@ if (!calibrationMode){
 
 	// /api/calibration/send-probe
 	router.post('/send-probe', function(req, res) {
-		//var deviceIp = req.body.DeviceIp // for debugging
-		var deviceIp = req.connection.remoteAddress // for debugging
+		var deviceIp = req.connection.remoteAddress
 		calibrationAgregator.getData(deviceIp).then(ApData => {
 			Calibration.saveProbe(req.body, ApData)
 		}).catch(error=> {
@@ -132,6 +133,7 @@ app.use('/api', router);
 // ==============================================
 
 app.listen(globalConf.ServerPort, globalConf.ServerHostName);
+logger.log('ComputationModel: ' + colors.bold(globalConf.ComputationModel));
 logger.Network('Server started: listen on ' + colors.bold(globalConf.ServerHostName + ':' + globalConf.ServerPort));
 
 if(!calibrationMode){

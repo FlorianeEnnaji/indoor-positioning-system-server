@@ -56,9 +56,9 @@ dbCache.Histogram.parseData = function(){ // parse all measures inside an array
 
 			if( this._data[elem.dataValues.location][elem.dataValues.macAddress]  == undefined){ // if it's a new Apid we add an entry
 				this._data[elem.dataValues.location][elem.dataValues.macAddress] = []
-				this._data[elem.dataValues.location]['totalValue'] = 0
-		}
-			this._data[elem.dataValues.location]['totalValue']++
+				this._data[elem.dataValues.location][elem.dataValues.macAddress]['totalValue'] = 0
+			}
+			this._data[elem.dataValues.location][elem.dataValues.macAddress]['totalValue']++
 			if( this._data[elem.dataValues.location][elem.dataValues.macAddress][elem.dataValues.rssi]  == undefined){ // if it's a new Apid we add an entry
 				this._data[elem.dataValues.location][elem.dataValues.macAddress][elem.dataValues.rssi] = 1
 			}else{
