@@ -10,7 +10,7 @@ const dbCache  = require("../DbCache");
 var  OneValueFingerprintModel = {}
 
 /**
- * function that gets location from receivedMeasures using Fingerprint method
+ * @brief function that gets location from receivedMeasures using Fingerprint method
  * @param receivedMeasures all received measures
  * @return the most accurate position
  */
@@ -36,7 +36,7 @@ OneValueFingerprintModel.getLocation = function(receivedMeasures){
 }
 
 /**
- * function that changes the format of received measures
+ * @brief function that changes the format of received measures
  * @param receivedMeasures all received measures
  * @return formatedMeasures the same measures formated
  */
@@ -49,8 +49,7 @@ OneValueFingerprintModel._formatReceivedMeasures = function(receivedMeasures){
 }
 
 /**
- * function that computes the RSSI distance
- * between two measurements
+ * @brief function that computes the RSSI distance between two measurements
  * @param measures1 the first set of measures
  * @param measures2 the second set of measures
  * @return dist the distance between the 2 sets

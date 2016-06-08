@@ -25,7 +25,7 @@ function Agregator (options) {
 util.inherits(Agregator, EventEmitter);
 
 /**
- * function that collects measures packets
+ * @brief function that collects measures packets
  * @param req the request we received
  * @return a boolean to check if the collection was made successfully
  */
@@ -50,7 +50,7 @@ Agregator.prototype.collect = function(req) {
 }
 
 /**
- * function that waits and returns collected measures packets
+ * @brief function that waits and returns collected measures packets
  * @param deviceIp the IP address of the device we're tracking
  */
 Agregator.prototype.getData = function(deviceIp){
@@ -69,7 +69,7 @@ Agregator.prototype.getData = function(deviceIp){
 }
 
 /**
- * function that checks if we have the same number of packets as AP number
+ * @brief function that checks if we have the same number of packets as AP number
  * @param packetDetail the details of the packet we received
  */
 Agregator.prototype._proceedPacket = function(packetDetail){
@@ -88,7 +88,7 @@ Agregator.prototype._proceedPacket = function(packetDetail){
 }
 
 /**
- * function that finds measure packets in the list for a particular deviceIp
+ * @brief function that finds measure packets in the list for a particular deviceIp
  * @param deviceIp the IP address of the device we're tracking
  * @param resolver the function to un-pause the system again
  */

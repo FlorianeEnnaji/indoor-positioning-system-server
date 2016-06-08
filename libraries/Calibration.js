@@ -18,8 +18,7 @@ var locationPostData = ["PosX", "PosY"]
 var currentLocations = []
 
 /**
- * function that save position we received from a request
- * and measures we received from our APs
+ * @brief function that save position we received from a request and measures we received from our APs
  * @param reqBody the body of the request we received
  * @param receivedMeasures all measures received
  */
@@ -45,7 +44,7 @@ Calibration.saveProbe = function(reqBody, recievedMeasures){
 }
 
 /**
- * function that checks if we can parse the request body
+ * @brief function that checks if we can parse the request body
  * @param neededValues the number of value we want to get from the parse
  * @param reqBody the body of the request we received
  * @return a boolean to check if the parse can be made successfully

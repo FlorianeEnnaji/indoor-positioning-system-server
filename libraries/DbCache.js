@@ -17,7 +17,7 @@ var dbCache = {}
 /* cache locations */
 dbCache._locations = []
 /**
- * function that parses location array
+ * @brief function that parses location array
  * @return a promise
  */
 dbCache.parseLocations = function(){
@@ -28,7 +28,7 @@ dbCache.parseLocations = function(){
 })
 }
 /**
- * function that get a location from the location array
+ * @brief function that get a location from the location array
  * @param locationId the index of the location we want in the array
  * @return the location from the location array
  */
@@ -41,7 +41,7 @@ dbCache.SingleValue = {}
 dbCache.SingleValue._data = []
 
 /**
- * function that gets the data from a single value model
+ * @brief function that gets the data from a single value model
  * @return the data from the single value model
  */
 dbCache.SingleValue.getData = function(){
@@ -49,7 +49,7 @@ dbCache.SingleValue.getData = function(){
 }
 
 /**
- * function that gets the data from the db and parse the data from a single value model
+ * @brief function that gets the data from the db and parse the data from a single value model
  * @return the data from the single value model in the right format
  */
 dbCache.SingleValue.parseData = function(){ // parse all measures inside an array
@@ -73,7 +73,7 @@ dbCache.Histogram = {}
 dbCache.Histogram._data = []
 
 /**
- * function that gets the data from a histogram model
+ * @brief function that gets the data from a histogram model
  * @return the data from the histogram model
  */
 dbCache.Histogram.getData = function(){
@@ -81,7 +81,7 @@ dbCache.Histogram.getData = function(){
 }
 
 /**
- * function that gets the data from the db and parse the data from a histogram model
+ * @brief function that gets the data from the db and parse the data from a histogram model
  * @return the data from the histogram model in the right format
  */
 dbCache.Histogram.parseData = function(){ // parse all measures inside an array
@@ -105,7 +105,7 @@ dbCache.Histogram.parseData = function(){ // parse all measures inside an array
 }
 
 /**
- * function that caches all data from a given model
+ * @brief function that caches all data from a given model
  * @param the model we want to cache data from
  * @return a promise
  */

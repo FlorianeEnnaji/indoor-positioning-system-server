@@ -11,7 +11,7 @@ const dbCache  = require("../DbCache");
 var  HistogramModel = {}
 
 /**
- * function that gets location from receivedMeasures using Histogram method
+ * @brief function that gets location from receivedMeasures using Histogram method
  * @param receivedMeasures all received measures
  * @return the most accurate position
  */
@@ -37,7 +37,7 @@ HistogramModel.getLocation = function(receivedMeasures){
 }
 
 /**
- * function that changes the format of received measures
+ * @brief function that changes the format of received measures
  * @param receivedMeasures all received measures
  * @return formatedMeasures the same measures formated
  */
@@ -55,8 +55,8 @@ HistogramModel._formatReceivedMeasures = function(receivedMeasures){
 }
 
 /**
- * function that computes the difference (0 totally different, 1 totally the same)
- * between two measurements
+ * @brief function that computes the difference between two measurements
+ * (0 totally different, 1 totally the same)
  * @param measures1 the first set of measures
  * @param measures2 the second set of measures
  * @return proba the difference between the 2 sets
@@ -74,8 +74,8 @@ HistogramModel._measureDistance = function(measures1, measures2){
 }
 
 /**
- * function that computes the similarity (0 totally different, 1 totally the same)
- * between two histograms
+ * @brief function that computes the similarity between two histograms
+ * (0 totally different, 1 totally the same)
  * @param histo1 the first histogram
  * @param histo2 the second histogram
  * @return overlapProba the similarity between the 2 histograms

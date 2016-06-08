@@ -8,7 +8,7 @@
  *
  */
 
-/* required variables for setup */
+/** required variables for setup */
 var express   		= require('express');
 var bodyParser 		= require('body-parser');
 var colors     		= require('colors');
@@ -21,39 +21,39 @@ var Calibration	     = require('./libraries/Calibration');
 var computationModel = require("./libraries/ComputationModel")[globalConf.ComputationModel];
 
 
-/* variables used for the environment */
+/** variables used for the environment */
 var app        = express();
 var router     = express.Router();
 var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: true, measuresPerRequest : globalConf.NumberOfAp}) // Agregator parameters must be set in function of the chosen model
 
-/* Configurations */
+/** Configurations */
 
-/* to support URL-encoded bodies */
+/** to support URL-encoded bodies */
 app.use(bodyParser.urlencoded({
   extended: true
 }));
 
-/* API request logger */
+/** API request logger */
 router.use(function(req, res, next) {
   /* Following line is commented because it slows down communication when we receive a lot of requests, uncomment if you want to see request logs */
 //  logger.Network(req.connection.remoteAddress + ' ' + colors.bold(req.method + ' ' + req.url) + ' ' + JSON.stringify(req.body));
   next();
 });
 
-/*Routes*/
+/**Routes*/
 
-/*Calibration*/
+/**Calibration*/
 var calibrationMode = false
 if (process.argv.indexOf("calibration") != -1)
 	calibrationMode = true
 
-/*Simple get, testing purpose*/
+/**Simple get, testing purpose*/
 app.get('/', function(req, res) {
 	logger.Network(colors.bold(req.method + ' ' + req.url));
     res.send('Home page');
 });
 
-/*get from the mobile application, so it knows if it's in calibration or positioning*/
+/**get from the mobile application, so it knows if it's in calibration or positioning*/
 router.get('/', function(req, res) {
 	res.send({
 		isInCalibrationMode : calibrationMode,
@@ -61,16 +61,16 @@ router.get('/', function(req, res) {
 		})
 })
 
-/*Ping*/
+/**Ping*/
 router.get('/ping', function(req, res) {
 	res.send("pong")
 })
 
-/*Positioning mode case*/
+/**Positioning mode case*/
 if (!calibrationMode){
 	// 	logger.log('Calibration mode is ' + 'Disable'.red)
 
-	/* Address : /api/locate-me */
+	/** Address : /api/locate-me */
 	router.get('/locate-me', function(req, res) {
 		var deviceIp = req.connection.remoteAddress
     /* Uncomment following for debuging */
@@ -93,7 +93,7 @@ if (!calibrationMode){
 	    })
 	});
 
-	/* POST parameters:
+	/** POST parameters:
 	 * 		APid     : Id of the AP
 	 * 		DeviceIp : Ip of the device
 	 * 		RSSI     : Signal strength of the recieved packet
@@ -109,12 +109,12 @@ if (!calibrationMode){
 
 
 }else{
-  /* Calibration mode case*/
+  /** Calibration mode case*/
 	logger.log('Calibration mode is ' + 'Enable'.green)
 
 	var calibrationAgregator  = Agregator({timeWindow: globalConf.CalibrationTimeWindow, countingMeasureEnable: false})
 
-	/*Address : /api/calibration/send-probe*/
+	/**Address : /api/calibration/send-probe*/
 	router.post('/send-probe', function(req, res) {
 		//var deviceIp = req.body.DeviceIp // for debugging
 		var deviceIp = req.connection.remoteAddress // for debugging
@@ -126,7 +126,7 @@ if (!calibrationMode){
 	    res.send('Ok Thanks :)');
 	});
 
-	/* Address : /api/AP-measure*/
+	/** Address : /api/AP-measure*/
 	router.post('/AP-measure', function(req, res) {
 		req.body.APid = req.connection.remoteAddress
 		calibrationAgregator.collect(req, res)
@@ -135,11 +135,11 @@ if (!calibrationMode){
 
 }
 
-/* Add all theses routes to our application */
+/** Add all theses routes to our application */
 app.use('/api', router);
 
 
-/*Starts the server*/
+/**Starts the server*/
 
 app.listen(globalConf.ServerPort, globalConf.ServerHostName);
 logger.Network('Server started: listen on ' + colors.bold(globalConf.ServerHostName + ':' + globalConf.ServerPort));
