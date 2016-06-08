@@ -149,7 +149,7 @@ logger.Network('Server started: listen on ' + colors.bold(globalConf.ServerHostN
 
 if(!calibrationMode){
 	dbCache.cacheAll(globalConf.ComputationModel).then(() => {
-		logger.log('\nServer Ready ♥\n'.rainbow);
+		logger.log('\nServer Ready\n'.rainbow);
 	})
 }else
-	logger.log('\nServer Ready ♥\n'.rainbow);
+	logger.log('\nServer Ready\n'.rainbow);
