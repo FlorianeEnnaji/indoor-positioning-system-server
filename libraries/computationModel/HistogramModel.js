@@ -1,18 +1,29 @@
+/**
+ * @file HistogramModel.js
+ * @brief Computes location of the device using the Histogram Model
+ * @date June 3, 2016
+ *
+ * It's a model based on several measurements we saw in LO53 lessons.
+ */
 
 const dbCache  = require("../DbCache");
 
-// Computation model based on a multiple measurements
 var  HistogramModel = {}
 
-HistogramModel.getLocation = function(recievedMeasures){
-	recievedMeasures = this._formatReceivedMeasures(recievedMeasures)
-	//console.log(recievedMeasures)
+/**
+ * function that gets location from receivedMeasures using Histogram method
+ * @param receivedMeasures all received measures
+ * @return the most accurate position
+ */
+HistogramModel.getLocation = function(receivedMeasures){
+	receivedMeasures = this._formatReceivedMeasures(receivedMeasures)
+	//console.log(receivedMeasures)
 
 	var bestProba = 0
 	var bestPositionId = null;
 	dbCache.SingleValue.getData().forEach((elem, posId) => {
 
-		var dist = this._measureDistance(recievedMeasures, elem)
+		var dist = this._measureDistance(receivedMeasures, elem)
 		//console.log('Distance: ' + dist)
 		if(dist < bestProba){
 			bestProba = dist
@@ -25,10 +36,14 @@ HistogramModel.getLocation = function(recievedMeasures){
 	return dbCache.getLocation(bestPositionId)
 }
 
-
-HistogramModel._formatReceivedMeasures = function(recievedMeasures){
+/**
+ * function that changes the format of received measures
+ * @param receivedMeasures all received measures
+ * @return formatedMeasures the same measures formated
+ */
+HistogramModel._formatReceivedMeasures = function(receivedMeasures){
 	var formatedMeasures = []
-	recievedMeasures.forEach(elem => {
+	receivedMeasures.forEach(elem => {
 		if (formatedMeasures[elem.APid] == undefined)
 			formatedMeasures[elem.APid] = []
 		if (formatedMeasures[elem.APid][elem.RSSI] == undefined)
@@ -39,8 +54,13 @@ HistogramModel._formatReceivedMeasures = function(recievedMeasures){
 	return formatedMeasures
 }
 
-
-
+/**
+ * function that computes the difference (0 totally different, 1 totally the same)
+ * between two measurements
+ * @param measures1 the first set of measures
+ * @param measures2 the second set of measures
+ * @return proba the difference between the 2 sets
+ */
 HistogramModel._measureDistance = function(measures1, measures2){
 	var proba = 1
 	for (ApId in measures1){
@@ -53,6 +73,13 @@ HistogramModel._measureDistance = function(measures1, measures2){
 	return proba
 }
 
+/**
+ * function that computes the similarity (0 totally different, 1 totally the same)
+ * between two histograms
+ * @param histo1 the first histogram
+ * @param histo2 the second histogram
+ * @return overlapProba the similarity between the 2 histograms
+ */
 HistogramModel._historgramOverlapProba = function(histo1, histo2){
 	var overlapProba = 0
 	for (RSSI in histo1){
