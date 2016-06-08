@@ -1,4 +1,8 @@
-'use strict';
+/**
+ * @file index.js
+ * @brief Automatically generated file
+ */
+ 'use strict';
 
 
 var fs         = require('fs');
