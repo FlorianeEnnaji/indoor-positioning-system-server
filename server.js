@@ -1,8 +1,14 @@
-// server.js
+/**
+ * @file server.js
+ * @brief Contains all necessary methods to config the server
+ * @date April 15, 2016
+ *
+ * Creates routes for all get and post requests
+ * for Calibration and positioning modes.
+ *
+ */
 
-// REQUIRE SETUP
-// ==============================================
-
+/** required variables for setup */
 var express   		= require('express');
 var bodyParser 		= require('body-parser');
 var colors     		= require('colors');
@@ -14,9 +20,8 @@ var logger	  		 = require('./libraries/Logger');
 var Calibration	     = require('./libraries/Calibration');
 var computationModel = require("./libraries/ComputationModel")[globalConf.ComputationModel];
 
-// ENV VAR
-// ==============================================
 
+/** variables used for the environment */
 var app        = express();
 var router     = express.Router();
 
@@ -24,53 +29,59 @@ var router     = express.Router();
 
 var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: true, measuresPerRequest : globalConf.NumberOfAp, measuresUnit: globalConf.measuresUnit}) // Agregator parameters must be set in function of the chosen model (single value)
 
-// CONF
-// ==============================================
 
-// to support URL-encoded bodies
-app.use(bodyParser.urlencoded({    
+/** Configurations */
+
+/** to support URL-encoded bodies */
+app.use(bodyParser.urlencoded({
   extended: true
-})); 
+}));
 
-// API request logger
+/** API request logger */
 router.use(function(req, res, next) {
+  /* Following line is commented because it slows down communication when we receive a lot of requests, uncomment if you want to see request logs */
  // logger.Network(req.connection.remoteAddress + ' ' + colors.bold(req.method + ' ' + req.url) + ' ' + JSON.stringify(req.body));
   next();
 });
 
-// ROUTES
-// ==============================================
+/**Routes*/
 
+/**Calibration*/
 var calibrationMode = false
 if (process.argv.indexOf("calibration") != -1)
 	calibrationMode = true
 
+/**Simple get, testing purpose*/
 app.get('/', function(req, res) {
 	logger.Network(colors.bold(req.method + ' ' + req.url));
-    res.send('Home page');  
+    res.send('Home page');
 });
 
+/**get from the mobile application, so it knows if it's in calibration or positioning*/
 router.get('/', function(req, res) {
 	res.send({
 		isInCalibrationMode : calibrationMode,
 		computationModel    : globalConf.ComputationModel
-		})	
+		})
 })
 
+/**Ping*/
 router.get('/ping', function(req, res) {
-	res.send("pong")	
+	res.send("pong")
 })
 
+/**Positioning mode case*/
 if (!calibrationMode){
 	// 	logger.log('Calibration mode is ' + 'Disable'.red)
 
-	// /api/locate-me
+	/** Address : /api/locate-me */
 	router.get('/locate-me', function(req, res) {
 		var deviceIp = req.connection.remoteAddress
-		//var deviceIp = '192.168.1.53' // for debugging
+    /* Uncomment following for debuging */
+		//var deviceIp = '192.168.1.53'
 
 	    agregator.getData(deviceIp).then(ApData => {
-		    //console.log(ApData)		
+		    //console.log(ApData)
 	    	pos = computationModel.getLocation(ApData)
 	    	if (pos != null) {
 		    	logger.Location(pos)
@@ -87,15 +98,15 @@ if (!calibrationMode){
 	    })
 	});
 
-	// POST parameters:
-	// 		APid     : Id of the AP
-	// 		DeviceIp : Ip of the device
-	// 		RSSI     : Signal strength of the recieved packet
-	// /api/AP-measure
+	/** POST parameters:
+	 * 		APid     : Id of the AP
+	 * 		DeviceIp : Ip of the device
+	 * 		RSSI     : Signal strength of the recieved packet
+	 * /api/AP-measure */
 	router.post('/AP-measure', function(req, res){
 		req.body.APid = req.connection.remoteAddress
 		//console.log(req.connection.remoteAddress)
-		if(agregator.collect(req, res))
+		if(agregator.collect(req))
 			res.send('Ok');
 		else
 			res.send('Error');
@@ -103,11 +114,12 @@ if (!calibrationMode){
 
 
 }else{
+  /** Calibration mode case*/
 	logger.log('Calibration mode is ' + 'Enable'.green)
 
 	var calibrationAgregator  = Agregator({timeWindow: globalConf.CalibrationTimeWindow, countingMeasureEnable: false,  measuresUnit: globalConf.measuresUnit})
 
-	// /api/calibration/send-probe
+	/**Address : /api/calibration/send-probe*/
 	router.post('/send-probe', function(req, res) {
 		var deviceIp = req.connection.remoteAddress
 		calibrationAgregator.getData(deviceIp).then(ApData => {
@@ -115,10 +127,10 @@ if (!calibrationMode){
 		}).catch(error=> {
 			logger.Agregator(error)
 		})
-	    res.send('Ok Thanks :)');  
+	    res.send('Ok Thanks :)');
 	});
 
-	// /api/AP-measure
+	/** Address : /api/AP-measure*/
 	router.post('/AP-measure', function(req, res) {
 		req.body.APid = req.connection.remoteAddress
 		calibrationAgregator.collect(req, res)
@@ -127,12 +139,11 @@ if (!calibrationMode){
 
 }
 
-// apply theses routes to our application
+/** Add all theses routes to our application */
 app.use('/api', router);
 
 
-// START THE SERVER
-// ==============================================
+/**Starts the server*/
 
 app.listen(globalConf.ServerPort, globalConf.ServerHostName);
 logger.log('ComputationModel: ' + colors.bold(globalConf.ComputationModel));
@@ -140,7 +151,7 @@ logger.Network('Server started: listen on ' + colors.bold(globalConf.ServerHostN
 
 if(!calibrationMode){
 	dbCache.cacheAll(globalConf.ComputationModel).then(() => {
-		logger.log('\nServer Ready ♥\n'.rainbow);
+		logger.log('\nServer Ready\n'.rainbow);
 	})
 }else
-	logger.log('\nServer Ready ♥\n'.rainbow);
+	logger.log('\nServer Ready\n'.rainbow);

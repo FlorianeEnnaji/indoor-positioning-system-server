@@ -1,9 +1,17 @@
+/**
+ * @file Agregator.js
+ * @brief Collect and parse all measures packets
+ * @date May 18, 2016
+ *
+ * This object will collect and parse all measures packets send form APs
+ * for a single location request (send by a device)
+ */
+
 const util         = require('util');
 const EventEmitter = require('events');
 const colors       = require('colors');
 const logger	   = require('../libraries/Logger');
 
-// This object will colect and parse all measures packets send form APs for a single location request (send by a device)
 function Agregator (options) {
 	var thisOptions = options || {}
     this.timeWindow = thisOptions.timeWindow || 300
@@ -17,8 +25,12 @@ function Agregator (options) {
 
 util.inherits(Agregator, EventEmitter);
 
-// Collect measure packets
-Agregator.prototype.collect = function(req, res) {
+/**
+ * @brief function that collects measures packets
+ * @param req the request we received
+ * @return a boolean to check if the collection was made successfully
+ */
+Agregator.prototype.collect = function(req) {
 	if (!req.body.APid || !req.body.DeviceIp || (!req.body.RSSI_dBm && this.measuresUnit == "dBm") || (!req.body.RSSI_pW  && this.measuresUnit == "pW")){
 		logger.Agregator('ERROR'.bold.red + ' measure packet body error')
 		return false;
@@ -34,7 +46,7 @@ Agregator.prototype.collect = function(req, res) {
 	    this.incomingMeasureRequests.push(data)
 
 	    if(this.incomingMeasureRequests > this.queueMaxLength)
-	    	this.incomingLocationRequests.splice(0, 1) 
+	    	this.incomingLocationRequests.splice(0, 1)
 
 	    if (this.countingMeasureEnable)
 			this._proceedPacket(data)
@@ -42,7 +54,10 @@ Agregator.prototype.collect = function(req, res) {
     return true;
 }
 
-// wait and return collected measure packets
+/**
+ * @brief function that waits and returns collected measures packets
+ * @param deviceIp the IP address of the device we're tracking
+ */
 Agregator.prototype.getData = function(deviceIp){
 	//console.log(deviceIp)
 	var beginTime = Date.now();
@@ -53,11 +68,15 @@ Agregator.prototype.getData = function(deviceIp){
 		}
 
 		var timeOut = setTimeout(() => { this._getDataPacket(deviceIp, resolve) }, this.timeWindow)
-		this.incomingLocationRequests[deviceIp] = { packetReceived: 0, timeOut: timeOut, start: beginTime, resolver: resolve} 
+		this.incomingLocationRequests[deviceIp] = { packetReceived: 0, timeOut: timeOut, start: beginTime, resolver: resolve}
 
-	}) 
+	})
 }
 
+/**
+ * @brief function that checks if we have the same number of packets as AP number
+ * @param packetDetail the details of the packet we received
+ */
 Agregator.prototype._proceedPacket = function(packetDetail){
 	if(this.incomingLocationRequests[packetDetail.DeviceIp] != undefined){
 		this.incomingLocationRequests[packetDetail.DeviceIp].packetReceived++
@@ -65,7 +84,7 @@ Agregator.prototype._proceedPacket = function(packetDetail){
 		clearTimeout(client.timeOut) // stop the old time out
 		var remainingTime = this.timeWindow - (Date.now() - client.start)
 
-		if (remainingTime > 20 && client.packetReceived <= this.measuresPerRequest ) 
+		if (remainingTime > 20 && client.packetReceived <= this.measuresPerRequest )
 			this.incomingLocationRequests[packetDetail.DeviceIp].timeOut =  setTimeout(() => {this._getDataPacket(packetDetail.DeviceIp, client.resolver) }, remainingTime)
 		else{
 			this._getDataPacket(packetDetail.DeviceIp, client.resolver);
@@ -73,7 +92,11 @@ Agregator.prototype._proceedPacket = function(packetDetail){
 	}
 }
 
-// retrive measure packets in the list for a particular deviceIp
+/**
+ * @brief function that finds measure packets in the list for a particular deviceIp
+ * @param deviceIp the IP address of the device we're tracking
+ * @param resolver the function to un-pause the system again
+ */
 Agregator.prototype._getDataPacket = function(deviceIp, resolver){
 	logger.Agregator('Proceed request for ' + colors.bold(deviceIp))
 
@@ -87,8 +110,6 @@ Agregator.prototype._getDataPacket = function(deviceIp, resolver){
 		//console.log(elem.DeviceIp, deviceIp, elem.DeviceIp == deviceIp)
 		if(elem.DeviceIp == deviceIp)
 			measures.push(elem)
-
-
 	})
 	resolver(measures);
 }
@@ -103,11 +124,11 @@ Agregator.prototype._cleanQueue = function(){
 Agregator.prototype._autoCleanQueues = function(){
 	if(this.incomingMeasureRequests.length > this.autoCleanMaxLength){
 		logger.Agregator('Auto clean incomingMeasureRequests queue, length: ' + this.incomingMeasureRequests.length)
-		this.incomingMeasureRequests.splice(0, this.incomingMeasureRequests.length - this.autoCleanMaxLength) 
+		this.incomingMeasureRequests.splice(0, this.incomingMeasureRequests.length - this.autoCleanMaxLength)
 	}
 	if (this.incomingLocationRequests.length > this.autoCleanMaxLength){
 		logger.Agregator('Auto clean incomingLocationRequests queue, length: ' + this.incomingMeasureRequests.length)
-		this.incomingLocationRequests.splice(0, this.incomingLocationRequests.length - this.autoCleanMaxLength) 
+		this.incomingLocationRequests.splice(0, this.incomingLocationRequests.length - this.autoCleanMaxLength)
 	}
 }
 
