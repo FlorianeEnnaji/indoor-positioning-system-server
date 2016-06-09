@@ -10,6 +10,7 @@ function Agregator (options) {
     this.queueMaxLength = thisOptions.queueMaxLength || 50
     this.countingMeasureEnable = thisOptions.countingMeasureEnable != undefined ? thisOptions.countingMeasureEnable : true
     this.measuresPerRequest = thisOptions.measuresPerRequest || 4
+    this.measuresUnit = thisOptions.measuresUnit || "dBm"
     this.incomingMeasureRequests = []
     this.incomingLocationRequests = []
 }
@@ -18,12 +19,16 @@ util.inherits(Agregator, EventEmitter);
 
 // Collect measure packets
 Agregator.prototype.collect = function(req, res) {
-	if (!req.body.APid || !req.body.DeviceIp || !req.body.RSSI){
-		logger.Agregator('ERROR'.bold.red + 'measure packet body error')
+	if (!req.body.APid || !req.body.DeviceIp || (!req.body.RSSI_dBm && this.measuresUnit == "dBm") || (!req.body.RSSI_pW  && this.measuresUnit == "pW")){
+		logger.Agregator('ERROR'.bold.red + ' measure packet body error')
 		return false;
 	}
 
-	var rssi = req.body.RSSI.split(',')
+	var rssi = []
+	if(this.measuresUnit == "dBm")
+		rssi = req.body.RSSI_dBm.split(',')
+	if(this.measuresUnit == "pW")
+		rssi = req.body.RSSI_pW.split(',')
 	rssi.forEach((elem, index) => {
 		var data = {receivedTime: Date.now(), APid: req.body.APid + "#" + index, DeviceIp: req.body.DeviceIp, RSSI: elem }
 	    this.incomingMeasureRequests.push(data)

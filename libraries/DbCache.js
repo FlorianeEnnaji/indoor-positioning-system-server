@@ -75,7 +75,7 @@ dbCache.cacheAll = function(model){
 	var modelDataCachePromise = dbCache[model].parseData().then(function(){
 
 		logger.DBCache('Data for '+ colors.bold(model) +' model cached. ' + Object.keys(dbCache[model]._data).length + ' entities');
-		logger.DBCache(dbCache[model]._data);
+		//logger.DBCache(dbCache[model]._data);
 	})
 	return Promise.all([locationCachePromise, modelDataCachePromise])
 }

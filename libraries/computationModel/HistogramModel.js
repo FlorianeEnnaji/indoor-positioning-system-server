@@ -12,9 +12,9 @@ HistogramModel.getLocation = function(recievedMeasures){
 	var bestProba = 0
 	var bestPositionId = null;
 	dbCache.Histogram.getData().forEach((elem, posId) => {
+		//console.log('Distance: ' + elem, 'point : ' + posId)
 
-		var proba = this._measureDistance2(parsedMeasures, elem)
-		//console.log('Distance: ' + proba, 'point : ' + posId)
+		var proba = this._measureDistance(parsedMeasures, elem)
 		if(proba < bestProba){
 			bestProba = proba
 			bestPositionId = posId
@@ -85,7 +85,7 @@ HistogramModel._historgramOverlapProba = function(histo1, histo2){
 		}
 	}
 	//console.log(overlapProba, histo1['totalValue'], histo2['totalValue'],  histo1[RSSI], histo2[RSSI], histo1[RSSI]/histo1['totalValue'], histo2[RSSI]/histo2['totalValue'])
-	console.log( overlapProba)
+	//console.log( overlapProba)
 	return overlapProba
 }
 

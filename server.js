@@ -19,9 +19,10 @@ var computationModel = require("./libraries/ComputationModel")[globalConf.Comput
 
 var app        = express();
 var router     = express.Router();
-var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: false, measuresPerRequest : globalConf.NumberOfAp}) // Agregator parameters must be set in function of the chosen model (histogram)
 
-var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: true, measuresPerRequest : globalConf.NumberOfAp}) // Agregator parameters must be set in function of the chosen model (single value)
+//var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: false, measuresPerRequest : globalConf.NumberOfAp, measuresUnit: globalConf.measuresUnit}) // Agregator parameters must be set in function of the chosen model (histogram)
+
+var agregator  = Agregator({timeWindow: globalConf.DataPacketTimeWindow, countingMeasureEnable: true, measuresPerRequest : globalConf.NumberOfAp, measuresUnit: globalConf.measuresUnit}) // Agregator parameters must be set in function of the chosen model (single value)
 
 // CONF
 // ==============================================
@@ -73,10 +74,11 @@ if (!calibrationMode){
 	    	pos = computationModel.getLocation(ApData)
 	    	if (pos != null) {
 		    	logger.Location(pos)
+		    	pos.Error = false;
 		    	res.send(pos) 		
 	    	}else{
 		    	logger.Location('ERROR'.red + ' No location found')
-		    	res.send({x: -100, y: -100})		
+		    	res.send({Error: true})		
 	    	}
 
 	    },error => {
@@ -103,7 +105,7 @@ if (!calibrationMode){
 }else{
 	logger.log('Calibration mode is ' + 'Enable'.green)
 
-	var calibrationAgregator  = Agregator({timeWindow: globalConf.CalibrationTimeWindow, countingMeasureEnable: false})
+	var calibrationAgregator  = Agregator({timeWindow: globalConf.CalibrationTimeWindow, countingMeasureEnable: false,  measuresUnit: globalConf.measuresUnit})
 
 	// /api/calibration/send-probe
 	router.post('/send-probe', function(req, res) {
