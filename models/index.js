@@ -11,7 +11,7 @@ var Sequelize  = require('sequelize');
 var colors     = require('colors');
 var basename   = path.basename(module.filename);
 var env        = process.env.NODE_ENV || 'development';
-var dbConfFile = __dirname + '\\..\\configurations\\databaseConf.json'
+var dbConfFile = __dirname + '/../configurations/databaseConf.json'
 var db         = {};
 
 try {

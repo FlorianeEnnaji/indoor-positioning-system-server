@@ -18,7 +18,7 @@ var Agregator 		 = require('./libraries/Agregator');
 var dbCache   		 = require("./libraries/DbCache");
 var logger	  		 = require('./libraries/Logger');
 var Calibration	     = require('./libraries/Calibration');
-var computationModel = require("./libraries/ComputationModel")[globalConf.ComputationModel];
+var computationModel = require("./libraries/computationModel")[globalConf.ComputationModel];
 
 
 /** variables used for the environment */
